@@ -1,59 +1,62 @@
-REG_GAMEPAD_1 = $4016
+.include "include/gamepad.inc"
+.include "include/macros.asm"
 
-GAMEPAD_BTN_A_MASK      = %10000000
-GAMEPAD_BTN_B_MASK      = %01000000
-GAMEPAD_BTN_SELECT_MASK = %00100000
-GAMEPAD_BTN_START_MASK  = %00010000
-GAMEPAD_UP_MASK         = %00001000
-GAMEPAD_DOWN_MASK       = %00000100
-GAMEPAD_LEFT_MASK       = %00000010
-GAMEPAD_RIGHT_MASK      = %00000001
+.import DISABLE_APU_FRAME_IRQ
 
 .segment "HEADER"
-  .byte "NES", $1a, $02, $01
-  .byte %00000000
-  .byte $00
-  .byte $00
-  .byte $00
-  .byte $00
-  .byte $00,$00,$00,$00,$00
+  .byte "NES", $1A  ; iNES header identifier
+  .byte 2           ; 2x 16KB PRG-ROM Banks
+  .byte 1           ; 1x  8KB CHR-ROM
+  .byte $01, $00    ; mapper 0, vertical mirroring
 
-.segment "TILES"
-.segment "OAM"
-.segment "STARTUP"
+.segment "VECTORS"
+  .word VBLANK
+  .word RESET
+  .word IRQ
+
 .segment "ZEROPAGE"
   GAMEPAD_1: .res 1  ; 8 bit variable containing flags for buttons
   GAMEPAD_STATUS: .res 1
   A_STATUS: .res 1
+
 .segment "CODE"
-RESET:
-  SEI
-  CLD
-  ; disable APU frame IRQ
-  LDX #$40
-  STX $4017
-  ; initialize stack
-  LDX #$FF
-	TXS
+
+.proc WAIT_PPU_READY
+  BIT $2002
+VBLANK_1:
+  BIT $2002
+  BPL VBLANK_1
+VBLANK_2:
+  BIT $2002
+  BPL VBLANK_2
+  RTS
+.endproc
+
+.proc INIT_NES
+  JSR DISABLE_APU_FRAME_IRQ
   ; disable NMI, rendering, DMC IRQs
   LDX #0
   STX $2000
   STX $2001
-  STX $2010
+  STX $4010
+  JSR WAIT_PPU_READY
+  RTS
+.endproc
 
-  BIT $2002
-VBLANK1:
-  BIT $2002
-  BPL VBLANK1
-VBLANK2:
-  BIT $2002
-  BPL VBLANK2
+RESET:
+  SEI
+  CLD
+  LDX #$FF
+	TXS
+  JSR INIT_NES
 MAIN_LOOP:
   JSR READ_GAMEPAD_1
 
   ; store final result of game pad at memory location 1
   LDA GAMEPAD_1
   STA 1
+
+  set 1, GAMEPAD_1
 
   ; check single button
   LDA GAMEPAD_1
@@ -87,9 +90,12 @@ GAMEPAD_READ_LOOP:
   BCC GAMEPAD_READ_LOOP
   RTS
 
-.segment "VECTORS"
-  .word VBLANK
-  .word RESET
-  .word IRQ
+
+.segment "TILES"
+.segment "OAM"
+.segment "STARTUP"
+
+
+
 
 .segment "CHARS"
