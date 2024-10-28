@@ -1,12 +1,15 @@
 .export START_GAME_LOOP
 
-.import READ_GAMEPAD_1
+.import READ_GAMEPAD_1, SET_BACKGROUND_COLOR, ENABLE_PPU_RENDERING, ENABLE_NMI_INTERRUPTS
 .importzp GAMEPAD_1, GAMEPAD_STATUS, A_STATUS
 
 .include "include/gamepad.inc"
 .include "include/macros.inc"
 
 .proc START_GAME_LOOP
+    JSR SET_BACKGROUND_COLOR
+    JSR ENABLE_PPU_RENDERING
+    JSR ENABLE_NMI_INTERRUPTS
   MAIN_LOOP:
     JSR READ_GAMEPAD_1
     ; store final result of game pad at memory location 1

@@ -1,6 +1,11 @@
 .import START_GAME_LOOP, INIT_NES
 .global VBLANK, RESET, IRQ
 
+.importzp COLOR, COUNTER
+
+PPU_ADDR    = $2006
+PPU_DATA    = $2007
+
 .segment "TILES"
 .segment "OAM"
 .segment "CODE"
@@ -12,5 +17,21 @@
     JSR INIT_NES
     JMP START_GAME_LOOP
   VBLANK:
+    LDA COUNTER
+    BNE END
+
+    LDA #$3f
+    STA PPU_ADDR
+    LDA #$00
+    STA PPU_ADDR
+    INC COLOR
+    LDA COLOR
+    STA PPU_DATA
+  END:
+    INC COUNTER
+    LDA #31
+    AND COUNTER
+    STA COUNTER
+    RTI
   IRQ:
     RTI
