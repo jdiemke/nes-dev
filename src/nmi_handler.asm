@@ -1,0 +1,26 @@
+.export HANDLE_NMI
+
+
+.importzp COLOR, COUNTER
+
+PPU_ADDR    = $2006
+PPU_DATA    = $2007
+
+.proc HANDLE_NMI
+    LDA COUNTER
+    BNE END
+
+    LDA #$3f
+    STA PPU_ADDR
+    LDA #$00
+    STA PPU_ADDR
+    INC COLOR
+    LDA COLOR
+    STA PPU_DATA
+  END:
+    INC COUNTER
+    LDA #31
+    AND COUNTER
+    STA COUNTER
+    RTS
+.endproc

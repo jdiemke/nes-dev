@@ -1,12 +1,19 @@
-.import START_GAME_LOOP, INIT_NES
+.import INIT_NES
+.import START_GAME_LOOP
+.import HANDLE_NMI
+
 .global VBLANK, RESET, IRQ
 
-.importzp COLOR, COUNTER
 
+PPU_SCROLL  = $2005
 PPU_ADDR    = $2006
 PPU_DATA    = $2007
 
-.segment "TILES"
+MASK_BG   = $08
+CTRL_NMI  = $80
+
+.importzp X_POS, Y_POS
+
 .segment "OAM"
 .segment "CODE"
   RESET:
@@ -17,21 +24,8 @@ PPU_DATA    = $2007
     JSR INIT_NES
     JMP START_GAME_LOOP
   VBLANK:
-    LDA COUNTER
-    BNE END
 
-    LDA #$3f
-    STA PPU_ADDR
-    LDA #$00
-    STA PPU_ADDR
-    INC COLOR
-    LDA COLOR
-    STA PPU_DATA
-  END:
-    INC COUNTER
-    LDA #31
-    AND COUNTER
-    STA COUNTER
+    ;JSR HANDLE_NMI
     RTI
   IRQ:
     RTI
